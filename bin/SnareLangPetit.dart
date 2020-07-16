@@ -1,6 +1,6 @@
 import 'package:petitparser/petitparser.dart';
 
-import 'SnareGrammar.dart';
+//import 'SnareGrammar.dart';
 import 'SnareParser.dart';
 
 void main(List<String> arguments) {
@@ -10,7 +10,10 @@ void main(List<String> arguments) {
   // this calls constructor for SnareParser, which extends GrammarParser
   // which does a GrammarDefinition which does a SnareGrammarDefinition.start
   final parser = SnareParser();
+  print('Here is the SnareParser: ${parser.toString()}');
+  print('In SnareLangPetit.dart.main() got the SnareParser and will now try parsing...');
   parseMe(parser, '^8T');
+  parseMe(parser, '^8:3T');
   parseMe(parser, 'T');
   parseMe(parser, '8T');
   parseMe(parser, '^T');
@@ -25,22 +28,16 @@ void main(List<String> arguments) {
   parseMe(parser, 'X');
   parseMe(parser, '8X');
   parseMe(parser, '^X');
-//  final  result = parser.parse('^8T');
-//  if (result.isSuccess) {
-//    print('main(), done parsing ^8T, and result: ${result.value}');
-//  }
-//  else {
-//    print('failed to parse ^8T');
-//  }
+  parseMe(parser, 'T F D');
+  parseMe(parser, '8T 4F 5D');
 }
 
 Result parseMe(Parser parser, String string) {
   final  result = parser.parse(string);
   if (result.isSuccess) {
-    print('SnareLangPetit.dart.parseMe(), done parsing $string, and result is -->${result.value}<--');
+    print('SnareLangPetit.dart.parseMe(), Success!  Done parsing $string, and result is -->${result.value}<--');
   }
   else {
     print('SnareLangPetit.dart.parseMe(), failed to parse $string');
   }
-
 }
