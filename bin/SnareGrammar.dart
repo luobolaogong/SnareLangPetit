@@ -1,193 +1,203 @@
 import 'package:petitparser/petitparser.dart';
-
-// This is where the whole set of rules for a
-// Snare score is defined, and it's called SnareGrammar, which
-// satisfies a GrammarParser, and consists of the Snare Grammar
-// Definition.  But this is the most important part of the parser.
-//
-// SnareGrammar is a GrammarParser, and has a SnareGrammarDefinition
+// documentatin for petit parser is at https://pub.dev/documentation/petitparser/latest/
+// Seems there are different libraries.  Maybe all available when load one.
+/// Snare grammar.
 class SnareGrammar extends GrammarParser {
   SnareGrammar() : super(const SnareGrammarDefinition());
 }
 
-/// Snare grammar definition extends GrammarDefinition
-/*
-The parser relies on the grammar definition and production methods.
-So, here is the definition class, and the production methods that
-define SnareGrammar.
- */
 class SnareGrammarDefinition extends GrammarDefinition {
-  const SnareGrammarDefinition();
+  const SnareGrammarDefinition(); // nec?
 
-  // This is the starting point of the expression grammar
+  // I don't understand "ref()", and I don't understand "token()"
+  // You can do input.token(), and ref(token), and
+  /**
+   * Create and return a flattened and trimmed Parser,
+   * or if we just have a string, create and return a
+   * Parser for it, I guess.
+   */
+  Parser token(Object input, [String name]) {
+    if (input is Parser) {
+      print('In SnareGrammar.SnareGrammarDefinition.token(), '
+          'source is a parser, so will flatten and trim it.');
+//      return input.flatten('Expected $name').trim();
+      return input.token().trim(ref(HIDDEN_STUFF));
+    }
+    else if (input is String) {
+      print('In SnareGrammar.SnareGrammarDefinition.token(), '
+          'source is a string -->$input<--');
+      return token(input.toParser(message: 'Expected ${name ?? input}').trim());
+//      return input.toParser(message: 'Expected ${name ?? input}').trim();
+    }
+    else {
+      throw ArgumentError('Unknown token type: $input');
+    }
+  }
+//  Parser token(Object input, [String name]) {
+//    if (input is String) {
+//      print('In SnareGrammar.SnareGrammarDefinition.token(), '
+//          'source is a string -->$input<--');
+//      return input.toParser(message: 'Expected ${name ?? input}').trim();
+//    } else if (input is Parser) {
+//      ArgumentError.checkNotNull(name, 'name');
+//      print('In SnareGrammar.SnareGrammarDefinition.token(), '
+//          'source is a parser, so will flatten and trim it.');
+//      return input.flatten('Expected $name').trim(); // happens: ...
+//    } else {
+//      throw ArgumentError('Unknown token type: $input.');
+//    }
+//  }
+//  Parser token(Object input) {
+//    if (input is Parser) {
+//      return input.token().trim(ref(HIDDEN_STUFF));
+//    } else if (input is String) {
+//      return token(input.toParser());
+//    } else if (input is Function) {
+//      return token(ref(input));
+//    }
+//    throw ArgumentError.value(input, 'invalid token parser');
+//  }
+  // -----------------------------------------------------------------
+  // Keyword definitions.
+  // -----------------------------------------------------------------
+  Parser BREAK() => ref(token, 'break'); // means 'break' can be in input
+  Parser VAR() => ref(token, 'var'); // means that 'var' can be in input
+  // Pseudo-keywords that should also be valid identifiers.
+  Parser IMPORT() => ref(token, 'import');
+  Parser LIBRARY() => ref(token, 'library');
+  Parser SET() => ref(token, 'set');
+
+  // -----------------------------------------------------------------
+  // Grammar productions.
+  // -----------------------------------------------------------------
   Parser start() {
     print('In SnareGrammar.dart.SnareGrammarDefinition.start() '
         'and will return a Parser for a ref value followed by an end');
-    // what the heck is 'value'??????
-    print('value is $value'); // Closure: () => Parser<dynamic> from Function 'value':
-    return ref(value).end();
+    //print('value is $value'); // Closure: () => Parser<dynamic> from Function 'value':
+//    return ref(noteParser).end();
+    return ref(notes).end();
+//    return ref(value).end();
+
   }
 
-//  Parser start() => ref(value).end();
+  Parser notes() =>
+      ref(noteParser) & whitespace().plus() & ref(notes)
+      | ref(noteParser);
+  // flatten
 
-  // Calling this method causes a parser to be returned somehow.
-  // A call is made to String.toParser() which is part of PetitParser,
-  // or to Parser.flatten() which basically takes the parser tree and
-  // flattens it and removes all the array notation.  So rather than
-  // ['a', 'b', 'c'] you get 'abc'.  I guess both results are somehow
-  // a Parser.  Maybe a "token parser".  Don't know.
-  //
-  Parser token(Object source, [String name]) {
-    if (source is String) {
-      // Wow, calling toParser on a String.  Returns a Parser.
-      print(
-          'In SnareGrammar.dart.SnareGrammarDefinition.token(), source is a string -->$source<--  I do not know who calls this token method in SnareGrammarDefinition');
-      return source.toParser(message: 'Expected ${name ?? source}').trim();
-    } else if (source is Parser) {
-      // Wow, just check if not null and then flatten and trim it.
-      ArgumentError.checkNotNull(name, 'name');
-      return source.flatten('Expected $name').trim(); // happens: ...
-    } else {
-      throw ArgumentError('Unknown token type: $source.');
-    }
-  }
+//  Parser notes() {
+    //    final something = ref(noteParser).star(); // could also use Parser.matchesSkipping somewhere?
+//    return something;
 
-  //Parser comment() => ref(token, '//') & ref(elements).optional(); // total guess by me
-//  Parser note() => ref(token,'^8T');
-  Parser note() {
-    print('In SnareGrammarDefinition.note() and will return a parser if can');
-//    final noteParserIGuess = ref(token, '^8T');
-    final noteParserIGuess = ref(token, noteToken()); // wild guess
-//    final noteParserIGuess = ref(token, stringToken()); // wild guess
-//    final noteParserIGuess = ref(token, stringPrimitive()); // wild guess
-    print('In SnareGrammarDefinition.note() and Will now return a '
-        'noteParserIGuess, which is a reference to a token expecting '
-        '^8T maybe.');
-    return noteParserIGuess;
-  }
-
-//  Parser elements() {
-//    return ref(value).separatedBy(ref(token, ','), includeSeparators: false);
-//  }
+//    print('In SnareGrammar.value(), will return a parser based on the'
+//        ' existence of a ref to something based on precedence, maybe');
+//    // Is this how to do precedence?
+//    //    return ref(noteToken) | ref(stringToken) | ref(nullToken);
 //
-////  Parser elements() =>
-////      ref(value).separatedBy(ref(token, ','), includeSeparators: false);
-//
-//  Parser members() {
-//    return ref(pair).separatedBy(ref(token, ','), includeSeparators: false);
-//  }
-//
-//  Parser object() {
-//    return ref(token, '{') & ref(members).optional() & ref(token, '}');
+//    return ref(noteTokenParser);
 //  }
 
-//  Parser object() =>
-//      ref(token, '{') & ref(members).optional() & ref(token, '}');
 
-//  Parser pair() {
-//    return ref(stringToken) & ref(token, ':') & ref(value);
-//  }
 
-//  Parser pair() => ref(stringToken) & ref(token, ':') & ref(value);
-  // Not sure who calls this, but it is invoked after SnareGrammarDefinition.start(), which has a    return ref(value).end();
-  Parser value() {
-    print('In SnareGrammar.value(), will return a parser based on ref of either noteToken or stringToken or nullToken');
-    print('what the heck are these tokens?  '
-        'noteToken: ${noteToken}  '
-        'stringToken: ${stringToken} '
-        'nullToken: ${nullToken}');
-    return ref(noteToken) | ref(stringToken) | ref(nullToken);
-  }
-
-//  Parser value() =>
-//      ref(noteToken) |
-//      ref(stringToken) |
-//      ref(nullToken);
-
-  Parser nullToken() {
-    print('In SnareGrammarDefinition.nullToken() and will create and return a ref to a null token');
-    return ref(token, 'null');
-  }
-
-//  Parser nullToken() => ref(token, 'null');
-
-  Parser stringToken() {
-    print('In SnareGrammarDefinition.stringToken() and will try to create and return a ref to stringPrimitive.');
-    return ref(token, ref(stringPrimitive), 'string');
-  }
-
-//  Parser stringToken() => ref(token, ref(stringPrimitive), 'string');
-
-//  Parser numberToken() {
-//    return ref(token, ref(numberPrimitive), 'number');
-//  }
-
-//    Parser numberToken() => ref(token, ref(numberPrimitive), 'number');
-
-  // What calls this?
-  Parser noteToken() {
-    print('In SnareGrammarDefinition.noteToken() and will try to create and return a ref to a noteToken.');
-    final aReferenceToSomething = ref(token, ref(notePrimitive), 'noteToken');
-    print('In SnareGrammarDefinition.noteToken() and will now return that ref to a noteToken');
-    return aReferenceToSomething;
-  }
-
-  // Hopefully I'll never need floats, but keep this I think:
-//  Parser numberPrimitive() {
-//    return
-//      char('-').optional() &
-//      char('0').or(digit().plus()) &
-//      char('.').seq(digit().plus()).optional() &
-//      pattern('eE')
-//          .seq(pattern('-+').optional())
-//          .seq(digit().plus())
-//          .optional();
-//  }
-//  Parser numberPrimitive() =>
-//      char('-').optional() &
-//      char('0').or(digit().plus()) &
-//      char('.').seq(digit().plus()).optional() &
-//      pattern('eE')
-//          .seq(pattern('-+').optional())
-//          .seq(digit().plus())
-//          .optional();
-
-  // A string has to be in double quotes, it seems:
-  Parser stringPrimitive() {
-    print('In SnareGrammarDefinition.stringPrimitive() return parser of something in quotes');
-    return char('"') & ref(characterPrimitive).star() & char('"');
-  }
-
-//  Parser stringPrimitive() =>
-//      char('"') & ref(characterPrimitive).star() & char('"');
-
-  // What calls this?
-  Parser notePrimitive() {
-    print('In SnareGrammarDefinition.notePrimitive(), will create and return parser for a single note');
+  Parser noteParser() {
     final wholeNumberParser = digit().plus().flatten().trim().map(int.parse);
     final durationParser = wholeNumberParser & (char(':') & wholeNumberParser).optional();
-    final articulationParser = pattern('>^');
-    final typeParser = pattern('TtFfDdZz.');
-    final noteParser = articulationParser.optional() & durationParser.optional() & typeParser;
-    return noteParser.flatten();
-//    return noteParser;
+    return pattern('>^').optional() & durationParser.optional() & pattern('TtFfDdZz.');
   }
+//  Parser note() {
+//    final wholeNumberParser = digit().plus().flatten().trim().map(int.parse);
+////    final durationParser = ref(numberPrimitive) & ref(token, ':') & ref(numberPrimitive).optional();
+////    final durationParser = ref(numberPrimitive) & (char(':') & ref(numberPrimitive)).optional();
+//    final durationParser = wholeNumberParser & (char(':') & wholeNumberParser).optional();
+//    final articulationParser = pattern('>^');
+//    final typeParser = pattern('TtFfDdZz.');
+//    final noteParser = articulationParser.optional() & durationParser.optional() & typeParser;
+//    //return noteParser.flatten(); // flatten here, or elsewhere?
+//    return noteParser;
+//  }
 
-  Parser characterPrimitive() =>
-      ref(characterNormal);
+//  // What's the purpose of 'token'?  What does it do for you?  Why not
+//  // just skip this and let noteParser reference notePrimitiveParser?
+//  Parser noteTokenParser() {
+//    print('In SnareGrammarDefinition.noteToken() and will try to create and return a ref to a noteToken.');
+//    final notePrimitiveTokenRef = ref(token, ref(notePrimitiveParser), 'notePrimitiveToken');
+//    print('In SnareGrammarDefinition.noteToken() and will now return that ref to a noteToken');
+//    return notePrimitiveTokenRef;
+//  }
 
-//  Parser characterPrimitive() =>
-//      ref(characterNormal) | ref(characterEscape) | ref(characterUnicode);
+//  // In what way is this a primitive?  It's not a char or a number.
+//  // Probably get rid of this method and put the guts in noteTokenParser, or
+//  // just in noteParser.
+//  // I forgot about string() and word() as parsers, but so far don't need them.
+//  Parser notePrimitiveParser() {
+//    print('In SnareGrammarDefinition.notePrimitive(), will create and return parser for a single note');
+//    final wholeNumberParser = digit().plus().flatten().trim().map(int.parse);
+//    final durationParser = wholeNumberParser & (char(':') & wholeNumberParser).optional();
+//    final articulationParser = pattern('>^');
+//    final typeParser = pattern('TtFfDdZz.');
+//    final noteParser = articulationParser.optional() & durationParser.optional() & typeParser;
+//    return noteParser.flatten(); // flatten here, or elsewhere?
+////    return noteParser;
+//  }
 
-  // Will I want this?
-  Parser characterNormal() => pattern('^"\\');
+//  Parser noteParser() {
+//    print('In SnareGrammarDefinition.note() and will return a ref to a noteToken, I think');
+//    final noteTokenRef = ref(token, noteTokenParser()); // wild guess
+//    return noteTokenRef;
+//  }
+
+
+
+
+
+//  Parser statements() => ref(statement).star();
+//
+//  Parser statement() => ref(label).star() & ref(nonLabelledStatement);
+//
+//  Parser label() => ref(identifier) & ref(token, ':');
+//
+//  Parser identifier() => ref(token, ref(IDENTIFIER));
+
+
+  // -----------------------------------------------------------------
+  // Lexical tokens.
+  // -----------------------------------------------------------------
+  Parser STRING() =>
+      char('@').optional() & ref(MULTI_LINE_STRING) | ref(SINGLE_LINE_STRING);
+
+  Parser MULTI_LINE_STRING() =>
+      string('"""') & any().starLazy(string('"""')) & string('"""') |
+      string("'''") & any().starLazy(string("'''")) & string("'''");
+
+  Parser SINGLE_LINE_STRING() =>
+      char('"') & ref(STRING_CONTENT_DQ).star() & char('"') |
+      char("'") & ref(STRING_CONTENT_SQ).star() & char("'") |
+      string('@"') & pattern('^"\n\r').star() & char('"') |
+      string("@'") & pattern("^'\n\r").star() & char("'");
+
+  Parser STRING_CONTENT_DQ() =>
+      pattern('^\\"\n\r') | char('\\') & pattern('\n\r');
+
+  Parser STRING_CONTENT_SQ() =>
+      pattern("^\\'\n\r") | char('\\') & pattern('\n\r');
+
+  Parser NEWLINE() => pattern('\n\r');
+
+  Parser HASHBANG() =>
+      string('#!') & pattern('^\n\r').star() & ref(NEWLINE).optional();
+
+  Parser HIDDEN_STUFF() =>
+      ref(WHITESPACE) | ref(SINGLE_LINE_COMMENT) | ref(MULTI_LINE_COMMENT);
+
+  Parser WHITESPACE() => whitespace();
+
+  Parser SINGLE_LINE_COMMENT() =>
+      string('//') & ref(NEWLINE).neg().star() & ref(NEWLINE).optional();
+
+  Parser MULTI_LINE_COMMENT() =>
+      string('/*') &
+      (ref(MULTI_LINE_COMMENT) | string('*/').neg()).star() &
+      string('*/');
+
 }
-
-//  // Will I want this?:
-//  Parser characterEscape() => char('\\') & pattern(snareEscapeChars.keys.join());
-
-//  // I doubt I'll want this:
-//  Parser characterUnicode() => string('\\u') & pattern('0-9A-Fa-f').times(4); // huh????
-
-//}
 
