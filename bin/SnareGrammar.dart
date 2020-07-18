@@ -80,6 +80,35 @@ class SnareGrammarDefinition extends GrammarDefinition {
 
   }
 
+  // Note delimeter should be whitespace only, or comma only, or combinations.
+  // And should whitespace include a newline so that you could have multiple
+  // lines of notes?  Of course multiple lines are required, but how do you
+  // know when to stop then?
+  // So, for whitespace -> pattern('\b\t\n').plus()
+//  Parser myWhiteSpace() => pattern('\b\t\n\r').plus();
+  // Uses recursion here, and thus ref's
+  // This version allows whitespace and a comma for note delimiters.
+  // These should be legal:
+  // <notes> <notes>
+  // <notes>,<notes>
+  // <notes>, <notes>
+  // <notes> ,<notes>
+  // <notes> , <notes>
+  // So, <delimiter> should be
+  // whitespace().star() | char(',') |   whitespace().star() & char(',') & whitespace().star()
+
+  Parser myDelim() =>
+      whitespace().star() & char(',') & whitespace().star();
+//      whitespace().star() | char(',') |   (whitespace().star() & char(',') & whitespace().star());
+
+
+
+//  Parser notes() =>
+//      ref(noteParser) & myDelim().trim() & ref(notes) |
+//      ref(noteParser);
+
+
+// This version uses whitespace only for delimiters between notes
   Parser notes() =>
       ref(noteParser) & whitespace().plus() & ref(notes)
       | ref(noteParser);
@@ -98,12 +127,22 @@ class SnareGrammarDefinition extends GrammarDefinition {
 //  }
 
 
-
+  // This pretty much works, '^8'.  Want to support just a number, which
+  // means "use the previous note's type, but alternate hand."
   Parser noteParser() {
     final wholeNumberParser = digit().plus().flatten().trim().map(int.parse);
     final durationParser = wholeNumberParser & (char(':') & wholeNumberParser).optional();
-    return pattern('>^').optional() & durationParser.optional() & pattern('TtFfDdZz.');
+    return pattern('>^').optional() & durationParser.optional() & pattern('TtFfDdZz.').optional();
   }
+//  // This pretty much works, except cannot do '^8'.  Want to support just a number, which
+//  // means "use the previous note's type, but alternate hand."
+//  Parser noteParser() {
+//    final wholeNumberParser = digit().plus().flatten().trim().map(int.parse);
+//    final durationParser = wholeNumberParser & (char(':') & wholeNumberParser).optional();
+//    return pattern('>^').optional() & durationParser.optional() & pattern('TtFfDdZz.');
+//  }
+
+
 //  Parser note() {
 //    final wholeNumberParser = digit().plus().flatten().trim().map(int.parse);
 ////    final durationParser = ref(numberPrimitive) & ref(token, ':') & ref(numberPrimitive).optional();
